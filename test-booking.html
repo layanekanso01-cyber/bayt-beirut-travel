@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Booking</title>
+</head>
+<body>
+    <h1>Test Transport Booking</h1>
+    <button onclick="testBooking()">Create Test Booking</button>
+    <div id="result"></div>
+
+    <script>
+        async function testBooking() {
+            try {
+                const response = await fetch('http://localhost:5000/api/transport/book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customerName: "Test User",
+                        carType: "economy",
+                        carName: "Toyota Corolla",
+                        distance: 50,
+                        pricePerKm: "1.50",
+                        totalPrice: "75.00",
+                        status: "pending"
+                    })
+                });
+                
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                
+                alert('Booking created! Now check HeidiSQL!');
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<p style="color: red;">Error: ' + error + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

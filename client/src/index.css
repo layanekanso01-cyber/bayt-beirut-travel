@@ -1,0 +1,307 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "leaflet/dist/leaflet.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+  
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Chart colors matching the theme */
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+}
+
+:root {
+  /* Lebanon flag inspired palette: cedar green, white, and deep red */
+  
+  --background: 0 0% 98%;
+  --foreground: 150 18% 15%;
+
+  /* White cards */
+  --card: 0 0% 100%;
+  --card-foreground: 150 18% 15%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 150 18% 15%;
+
+  /* Lebanese red */
+  --primary: 355 72% 47%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Cedar green */
+  --secondary: 151 52% 30%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 150 16% 94%;
+  --muted-foreground: 152 10% 34%;
+
+  --accent: 151 52% 30%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 150 15% 86%;
+  --input: 150 15% 92%;
+  --ring: 355 72% 52%;
+
+  --chart-1: 355 72% 52%;
+  --chart-2: 151 52% 34%;
+  --chart-3: 0 0% 72%;
+  --chart-4: 8 78% 58%;
+  --chart-5: 150 18% 22%;
+}
+
+.dark {
+  --background: 150 28% 9%;
+  --foreground: 0 0% 96%;
+
+  --card: 150 24% 13%;
+  --card-foreground: 0 0% 96%;
+
+  --popover: 150 24% 13%;
+  --popover-foreground: 0 0% 96%;
+
+  --primary: 355 72% 58%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 151 48% 42%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 150 16% 20%;
+  --muted-foreground: 150 10% 72%;
+
+  --accent: 151 48% 35%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 150 18% 24%;
+  --input: 150 18% 24%;
+  --ring: 355 72% 58%;
+
+  --chart-1: 355 72% 58%;
+  --chart-2: 151 48% 42%;
+  --chart-3: 0 0% 78%;
+  --chart-4: 8 78% 62%;
+  --chart-5: 150 18% 78%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-semibold tracking-tight;
+  }
+}
+
+.lebanon-flag-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0 38%,
+    hsl(var(--card)) 38% 46%,
+    hsl(var(--secondary)) 46% 54%,
+    hsl(var(--card)) 54% 62%,
+    hsl(var(--primary)) 62% 100%
+  );
+}
+
+.lebanon-flag-ribbon {
+  background:
+    linear-gradient(
+      180deg,
+      hsl(var(--primary)) 0 24%,
+      hsl(var(--card)) 24% 76%,
+      hsl(var(--primary)) 76% 100%
+    );
+  position: relative;
+}
+
+.lebanon-flag-ribbon::after {
+  background: hsl(var(--secondary));
+  border-radius: 999px;
+  content: "";
+  height: 52%;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 1.35rem;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(-8px);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main {
+  animation: page-enter 360ms ease-out both;
+}
+
+.lebanon-map-marker {
+  background: transparent;
+  border: 0;
+}
+
+.lebanon-map-marker__pin {
+  align-items: center;
+  background: color-mix(in oklab, var(--marker-color) 92%, white);
+  border: 3px solid white;
+  border-radius: 999px 999px 999px 0;
+  box-shadow: 0 14px 28px rgb(15 23 42 / 0.28);
+  color: white;
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  height: 42px;
+  justify-content: center;
+  transform: rotate(-45deg);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  width: 42px;
+}
+
+.lebanon-map-marker__pin span {
+  transform: rotate(45deg);
+}
+
+.lebanon-map-marker__pin:hover,
+.lebanon-map-marker__pin.is-selected {
+  box-shadow: 0 18px 36px rgb(15 23 42 / 0.34);
+  transform: rotate(-45deg) scale(1.12);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  box-shadow: 0 18px 40px rgb(15 23 42 / 0.22);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+}
+
+.lebanon-map-popup {
+  overflow: hidden;
+  width: 280px;
+}
+
+.lebanon-map-popup img {
+  display: block;
+  height: 120px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.lebanon-map-popup > div {
+  padding: 0.85rem;
+}
+
+.lebanon-map-popup h3 {
+  color: hsl(var(--foreground));
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.lebanon-map-popup p {
+  color: hsl(var(--muted-foreground));
+  display: -webkit-box;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0.45rem 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.lebanon-map-popup__meta,
+.lebanon-map-popup__tags {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.lebanon-map-popup__meta span,
+.lebanon-map-popup__tags span {
+  background: hsl(var(--muted));
+  border-radius: 999px;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+}
+
+.lebanon-map-popup a {
+  background: hsl(var(--primary));
+  border-radius: 0.5rem;
+  color: hsl(var(--primary-foreground));
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  margin-top: 0.8rem;
+  padding: 0.55rem 0.7rem;
+  text-align: center;
+  text-decoration: none;
+}

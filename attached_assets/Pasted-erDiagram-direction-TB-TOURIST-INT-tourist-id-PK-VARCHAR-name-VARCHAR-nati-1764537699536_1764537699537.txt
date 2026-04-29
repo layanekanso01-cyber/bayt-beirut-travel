@@ -1,0 +1,99 @@
+erDiagram
+	direction TB
+	TOURIST {
+		INT tourist_id PK ""  
+		VARCHAR name  ""  
+		VARCHAR nationality  ""  
+		VARCHAR email  ""  
+		VARCHAR phone  ""  
+	}
+
+	REGION {
+		INT region_id PK ""  
+		VARCHAR region_name  ""  
+	}
+
+	POINT_OF_INTEREST {
+		INT poi_id PK ""  
+		VARCHAR name  ""  
+		VARCHAR description  ""  
+		DOUBLE rating  ""  
+		INT region_id FK ""  
+	}
+
+	TOURIST_SPOT {
+		INT poi_id PK,FK ""  
+		DOUBLE entrance_fee  ""  
+		VARCHAR spot_type  ""  
+	}
+
+	RESTAURANT {
+		INT poi_id PK,FK ""  
+		VARCHAR cuisine_type  ""  
+		DOUBLE average_price  ""  
+	}
+
+	SHOP {
+		INT poi_id PK,FK ""  
+		VARCHAR category  ""  
+		VARCHAR price_range  ""  
+	}
+
+	TRANSPORTATION {
+		INT transport_id PK ""  
+		VARCHAR type  ""  
+		VARCHAR company_name  ""  
+		VARCHAR contact_info  ""  
+		DOUBLE price_per_km  ""  
+	}
+
+	MAP {
+		INT map_id PK ""  
+		VARCHAR digital_link  ""  
+		INT region_id FK ""  
+	}
+
+	BOOKING {
+		INT booking_id PK ""  
+		DATE booking_date  ""  
+		DOUBLE total_price  "calculated: SUM(TOURIST_SPOT.entrance_fee) + SUM(TRANSPORTATION.price_per_km * distance) + service_fee"  
+		INT tourist_id FK ""  
+	}
+
+	BOOKING_POI {
+		INT booking_id FK ""  
+		INT poi_id FK ""  
+	}
+
+	BOOKING_TRANSPORT {
+		INT booking_id FK ""  
+		INT transport_id FK ""  
+		INT origin_poi_id FK "nullable"  
+		INT destination_poi_id FK "nullable"  
+	}
+
+	REVIEW {
+		INT review_id PK ""  
+		INT rating  ""  
+		VARCHAR comment  ""  
+		DATE review_date  ""  
+		VARCHAR review_type  "spot | restaurant | shop | trip"  
+		INT tourist_id FK ""  
+		INT poi_id FK "nullable if review_type = 'trip'"  
+		INT booking_id FK "nullable unless review_type = 'trip'"  
+	}
+
+	TOURIST||--o{BOOKING:"makes"
+	TOURIST||--o{REVIEW:"writes"
+	REGION||--o{POINT_OF_INTEREST:"contains"
+	REGION||--o{MAP:"mapped_in"
+	POINT_OF_INTEREST||--o|TOURIST_SPOT:"is_a"
+	POINT_OF_INTEREST||--o|RESTAURANT:"is_a"
+	POINT_OF_INTEREST||--o|SHOP:"is_a"
+	BOOKING||--o{BOOKING_POI:"includes"
+	POINT_OF_INTEREST||--o{BOOKING_POI:"booked_as"
+	BOOKING||--o{BOOKING_TRANSPORT:"uses"
+	TRANSPORTATION||--o{BOOKING_TRANSPORT:"included_in"
+	POINT_OF_INTEREST||--o{BOOKING_TRANSPORT:"destination"
+	POINT_OF_INTEREST||--o{REVIEW:"reviewed_at"
+	BOOKING||--o{REVIEW:"trip_review"I want a website for this
