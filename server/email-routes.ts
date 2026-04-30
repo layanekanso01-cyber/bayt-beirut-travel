@@ -29,7 +29,7 @@ function escapeHtml(value: unknown) {
 
 function getTransporter() {
   const user = process.env.SMTP_USER || adminEmail;
-  const pass = process.env.SMTP_PASS;
+  const pass = process.env.SMTP_PASS?.replace(/\s/g, "");
 
   if (!pass) return null;
 
@@ -127,6 +127,18 @@ function renderBookingEmail(input: Required<Pick<BookingEmailRequest, "bookingTy
 }
 
 export function registerEmailRoutes(app: Express) {
+  app.get("/api/debug/email", (_req, res) => {
+    res.json({
+      configured: Boolean(process.env.SMTP_PASS),
+      hasHost: Boolean(process.env.SMTP_HOST),
+      hasUser: Boolean(process.env.SMTP_USER),
+      hasPass: Boolean(process.env.SMTP_PASS),
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: Number(process.env.SMTP_PORT || 587),
+      user: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/^(.{2}).*(@.*)$/, "$1***$2") : null,
+    });
+  });
+
   app.post("/api/email/booking", async (req, res) => {
     try {
       const input = req.body as BookingEmailRequest;
