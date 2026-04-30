@@ -12,6 +12,7 @@ import { registerFavoritesRoutes } from "./favorites-routes";
 import { registerNewsletterRoutes } from "./newsletter-routes";
 import { registerAdminDataRoutes } from "./admin-data-routes";
 import { registerRestaurantRoutes } from "./restaurant-routes";
+import { registerEmailRoutes } from "./email-routes";
 import { eq } from "drizzle-orm";
 import { transportBookings } from "@shared/schema.ts";
 import { db } from "./db";
@@ -83,6 +84,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   registerNewsletterRoutes(app);
   registerAdminDataRoutes(app);
   registerRestaurantRoutes(app);
+  registerEmailRoutes(app);
 
   // POI routes
   registerPOIRoutes(app);

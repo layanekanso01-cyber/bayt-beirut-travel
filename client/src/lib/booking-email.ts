@@ -7,29 +7,22 @@ type BookingEmailInput = {
   details: Record<string, string | number | undefined | null>;
 };
 
-const bookingNotificationEmails = "layanekanso01@gmail.com,ziadchatila2005@gmail.com";
+export async function openBookingEmail(input: BookingEmailInput) {
+  try {
+    const response = await fetch("/api/email/booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
 
-export function openBookingEmail(input: BookingEmailInput) {
-  const subject = encodeURIComponent(`Bayt Beirut Travel booking - ${input.bookingId}`);
-  const detailsText = Object.entries(input.details)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => `${key}: ${value}`)
-    .join("\n");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || "Email failed");
+    }
 
-  const body = encodeURIComponent(
-    [
-      "New Bayt Beirut Travel booking received.",
-      "",
-      `Booking type: ${input.bookingType}`,
-      `Booking ID: ${input.bookingId}`,
-      `Username: ${input.username || "Guest"}`,
-      `Customer name: ${input.customerName}`,
-      `Customer email: ${input.email || "No email saved"}`,
-      "",
-      "Booking details:",
-      detailsText,
-    ].join("\n")
-  );
-
-  window.location.href = `mailto:${bookingNotificationEmails}?subject=${subject}&body=${body}`;
+    return true;
+  } catch (error) {
+    console.error("Automatic booking email failed:", error);
+    return false;
+  }
 }

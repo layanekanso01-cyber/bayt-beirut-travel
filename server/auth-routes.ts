@@ -2,6 +2,7 @@ import type { Express } from 'express';
 import bcrypt from 'bcryptjs';
 import { storage } from './storage';
 import { getDatabaseInfo } from './db';
+import { sendWelcomeEmail } from './email-routes';
 
 const devAdmins = [
   {
@@ -72,6 +73,14 @@ export function registerAuthRoutes(app: Express) {
       email: normalizedEmail,
       nationality: nationality || null,
       phone: phone || null,
+    });
+
+    sendWelcomeEmail({
+      email: user.email,
+      name: user.name,
+      username: user.username,
+    }).catch((emailError) => {
+      console.error('Welcome email error:', emailError);
     });
 
     res.status(201).json({
