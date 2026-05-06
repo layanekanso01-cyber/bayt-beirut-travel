@@ -4,7 +4,7 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import { storage } from "./storage";
-import { insertTransportBookingSchema, InsertPOIBooking } from "@shared/schema.ts";
+import { insertTransportBookingSchema, InsertPOIBooking, type UserActivity } from "@shared/schema.ts";
 import { registerAuthRoutes } from "./auth-routes";
 import { registerChatbotRoutes } from "./chatbot-routes";
 import { registerPOIRoutes } from "./poi-routes";
@@ -14,7 +14,7 @@ import { registerAdminDataRoutes } from "./admin-data-routes";
 import { registerRestaurantRoutes } from "./restaurant-routes";
 import { registerEmailRoutes } from "./email-routes";
 import { eq } from "drizzle-orm";
-import { transportBookings } from "@shared/schema.ts";
+import { transportBookings, userActivities } from "@shared/schema.ts";
 import { db } from "./db";
 
 type TicketBooking = {
@@ -72,6 +72,32 @@ async function findTicketBooking(id: string): Promise<TicketBooking | undefined>
   }
 
   return undefined;
+}
+
+async function syncBookingActivityStatus(bookingId: string, status: string) {
+  const database = db;
+  if (!database) return;
+
+  const activities = await database
+    .select()
+    .from(userActivities)
+    .where(eq(userActivities.relatedId, bookingId));
+
+  await Promise.all(
+    activities.map((activity: UserActivity) => {
+      const description = activity.description || "";
+      const nextDescription = description.match(/status:\s*[^,]+/i)
+        ? description.replace(/status:\s*[^,]+/i, `status: ${status}`)
+        : description
+          ? `${description}, status: ${status}`
+          : `Status: ${status}`;
+
+      return database
+        .update(userActivities)
+        .set({ description: nextDescription })
+        .where(eq(userActivities.id, activity.id));
+    }),
+  );
 }
 
 // Register authentication and chatbot routes
@@ -138,6 +164,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const booking = await storage.updateTransportBookingStatus(req.params.id, status);
       if (!booking) return res.status(404).json({ message: "Booking not found" });
 
+      await syncBookingActivityStatus(req.params.id, status);
       res.json(booking);
     } catch (error) {
       console.error("Error updating booking status:", error);
@@ -153,6 +180,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const booking = await storage.updatePOIBookingStatus(req.params.id, status);
       if (!booking) return res.status(404).json({ message: "Booking not found" });
 
+      await syncBookingActivityStatus(req.params.id, status);
       res.json(booking);
     } catch (error) {
       console.error("Error updating POI booking status:", error);
@@ -201,6 +229,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           : await storage.updatePOIBookingStatus(req.params.id, "used");
 
       if (!updated) return res.status(404).json({ message: "Ticket not found" });
+      await syncBookingActivityStatus(req.params.id, "used");
       const updatedTicket = await findTicketBooking(req.params.id);
       res.json(updatedTicket);
     } catch (error) {
