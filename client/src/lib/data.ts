@@ -14,6 +14,7 @@ const tripoliImg = commonsImage('TripoliLebCitadel1.jpg');
 const sidonImg = commonsImage('Sidon Sea Castle, Mediterranean Sea, Sidon, Lebanon.jpg');
 const qadishaImg = commonsImage('View of Kadisha Valley, Lebanon.jpg');
 const tyreImg = commonsImage('Tyre Ruins-Roman Tomb.jpg');
+const farayaImg = commonsImage('Mzaar Ski Resort.jpg');
 const corollaImg = commonsImage('Toyota Corolla Sedan (48935753002).jpg');
 const rangeRoverImg = commonsImage('Range Rover Sport (14924793318).jpg');
 const sClassImg = commonsImage('Mercedes S-Class W221 black (1).jpg');
@@ -307,6 +308,20 @@ export const pois: POI[] = [
     activities: ['culture', 'food', 'shopping'],
     entranceFee: 0,
     spotType: 'City Walk'
+  },
+  {
+    id: 119,
+    name: "Faraya",
+    description: "A mountain resort area known for winter activities, cool summer escapes, and scenic viewpoints.",
+    rating: 4.6,
+    regionId: 3,
+    type: 'spot',
+    image: farayaImg,
+    latitude: 33.9842,
+    longitude: 35.8284,
+    activities: ['nature', 'hiking'],
+    entranceFee: 0,
+    spotType: 'Mountain'
   },
   {
     id: 111,

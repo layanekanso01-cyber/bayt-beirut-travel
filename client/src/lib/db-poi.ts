@@ -21,6 +21,11 @@ const imageByKeyword: Array<[string, string]> = [
   ["tripoli", commonsImage("TripoliLebCitadel1.jpg")],
   ["sidon", commonsImage("Sidon Sea Castle, Mediterranean Sea, Sidon, Lebanon.jpg")],
   ["qadisha", commonsImage("View of Kadisha Valley, Lebanon.jpg")],
+  ["beiteddine", commonsImage("Courtyard at Beiteddine Palace - 2009.jpg")],
+  ["anfeh", commonsImage("Enfeh Liban-Nord.JPG")],
+  ["enfeh", commonsImage("Enfeh Liban-Nord.JPG")],
+  ["faraya", commonsImage("Mzaar Ski Resort.jpg")],
+  ["mar mikhael", commonsImage("Steps Of Mar Mikhael (154437631).jpeg")],
   ["tyre", commonsImage("Tyre Ruins-Roman Tomb.jpg")],
   ["beirut", commonsImage("Pigeon Rocks at sunset, Beirut, Lebanon.jpg")],
   ["restaurant", commonsImage("Mezze platter.jpg")],
@@ -56,6 +61,29 @@ function imageForPlace(text: string) {
   return imageByKeyword.find(([keyword]) => lowerText.includes(keyword))?.[1] || "/lebanon-logo.png";
 }
 
+const coordinatesByKeyword: Array<[string, { latitude: number; longitude: number }]> = [
+  ["baalbek", { latitude: 34.0052, longitude: 36.2116 }],
+  ["cedar", { latitude: 34.2495, longitude: 36.0623 }],
+  ["raouche", { latitude: 33.8951, longitude: 35.4692 }],
+  ["jeita", { latitude: 33.9475, longitude: 35.6386 }],
+  ["byblos", { latitude: 34.1211, longitude: 35.6478 }],
+  ["harissa", { latitude: 33.9792, longitude: 35.6375 }],
+  ["tripoli", { latitude: 34.4356, longitude: 35.84 }],
+  ["sidon", { latitude: 33.5636, longitude: 35.3706 }],
+  ["qadisha", { latitude: 34.2564, longitude: 35.9389 }],
+  ["beiteddine", { latitude: 33.6946, longitude: 35.5808 }],
+  ["anfeh", { latitude: 34.3561, longitude: 35.7314 }],
+  ["faraya", { latitude: 33.9842, longitude: 35.8284 }],
+  ["mar mikhael", { latitude: 33.8967, longitude: 35.5265 }],
+  ["tyre", { latitude: 33.2746, longitude: 35.1945 }],
+  ["beirut", { latitude: 33.8938, longitude: 35.5018 }],
+];
+
+function coordinatesForPlace(text: string) {
+  const lowerText = text.toLowerCase();
+  return coordinatesByKeyword.find(([keyword]) => lowerText.includes(keyword))?.[1];
+}
+
 export function poiFromDatabase(dbPoi: DbPoi): POI | null {
   const id = Number(dbPoi.poiId);
   if (!Number.isFinite(id)) return null;
@@ -63,6 +91,7 @@ export function poiFromDatabase(dbPoi: DbPoi): POI | null {
   const text = `${dbPoi.name} ${dbPoi.description ?? ""}`;
   const type = inferType(id, text);
   const rating = Number(dbPoi.rating ?? 4.7);
+  const coordinates = coordinatesForPlace(text);
 
   return {
     id,
@@ -72,6 +101,8 @@ export function poiFromDatabase(dbPoi: DbPoi): POI | null {
     regionId: Number(dbPoi.regionId || 1),
     type,
     image: imageForPlace(text),
+    latitude: coordinates?.latitude,
+    longitude: coordinates?.longitude,
     activities: inferActivities(type, text),
     entranceFee: type === "spot" ? 10 : undefined,
     averagePrice: type === "restaurant" ? 20 : undefined,
