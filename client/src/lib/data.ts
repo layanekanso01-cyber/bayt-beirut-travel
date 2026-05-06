@@ -564,6 +564,7 @@ export const pois: POI[] = [
 ];
 
 export const discountCodes: { [key: string]: { percentage: number; description: string } } = {
+  "10": { percentage: 10, description: "10% discount code" },
   "SUMMER20": { percentage: 20, description: "Summer discount - 20% off" },
   "GROUP15": { percentage: 15, description: "Group booking - 15% off" },
   "WELCOME10": { percentage: 10, description: "First-time visitor - 10% off" },

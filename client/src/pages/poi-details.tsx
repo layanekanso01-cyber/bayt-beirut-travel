@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { pois, regions } from "@/lib/data";
+import { discountCodes, pois, regions } from "@/lib/data";
 import { Navbar, Footer } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,7 @@ export default function POIDetails() {
   const id = params.id ? parseInt(params.id) : 0;
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [guests, setGuests] = useState("2");
+  const [discountCode, setDiscountCode] = useState("");
   const [showTicket, setShowTicket] = useState(false);
   const [bookingId, setBookingId] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
@@ -89,7 +90,10 @@ export default function POIDetails() {
   const guestCount = Math.max(1, parseInt(guests) || 1);
   const subtotal = basePrice * guestCount;
   const serviceFee = 5;
-  const total = subtotal + serviceFee;
+  const discountInfo = discountCodes[discountCode.trim().toUpperCase()];
+  const totalBeforeDiscount = subtotal + serviceFee;
+  const discountAmount = discountInfo ? totalBeforeDiscount * (discountInfo.percentage / 100) : 0;
+  const total = Math.max(0, totalBeforeDiscount - discountAmount);
 
 const handleBook = async () => {
   if (!selectedDate) {
@@ -143,6 +147,7 @@ const handleBook = async () => {
         Region: region?.name || "Lebanon",
         Date: selectedDate ? format(selectedDate, "MMMM d, yyyy") : "N/A",
         Guests: guestCount.toString(),
+        Discount: discountInfo ? `${discountInfo.percentage}% off (${discountCode.trim()})` : "None",
         Total: `$${total.toFixed(2)}`,
       },
     });
@@ -248,8 +253,11 @@ const handleAddReview = async () => {
     doc.setFontSize(12);
     doc.text(`Subtotal: $${subtotal.toFixed(2)}`, 20, 185);
     doc.text(`Service Fee: $${serviceFee.toFixed(2)}`, 20, 195);
+    if (discountInfo) {
+      doc.text(`Discount (${discountInfo.percentage}%): -$${discountAmount.toFixed(2)}`, 20, 205);
+    }
     doc.setFontSize(14);
-    doc.text(`Total: $${total.toFixed(2)}`, 20, 210);
+    doc.text(`Total: $${total.toFixed(2)}`, 20, discountInfo ? 220 : 210);
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
@@ -628,6 +636,21 @@ const handleAddReview = async () => {
                       placeholder="Enter number of guests"
                     />
                   </div>
+
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Discount Code</label>
+                    <Input
+                      type="text"
+                      placeholder="Enter code 10 for 10% off"
+                      value={discountCode}
+                      onChange={(event) => setDiscountCode(event.target.value)}
+                    />
+                    {discountCode.trim() && (
+                      <p className={`text-xs ${discountInfo ? "text-green-700" : "text-muted-foreground"}`}>
+                        {discountInfo ? discountInfo.description : "Code not active"}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-border">
@@ -639,6 +662,12 @@ const handleAddReview = async () => {
                     <span>Service Fee</span>
                     <span className="font-medium">${serviceFee.toFixed(2)}</span>
                   </div>
+                  {discountInfo && (
+                    <div className="flex justify-between mb-4 text-sm text-green-700">
+                      <span>Discount ({discountInfo.percentage}%)</span>
+                      <span className="font-medium">-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-bold text-lg text-primary">
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
