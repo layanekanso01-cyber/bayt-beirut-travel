@@ -21,6 +21,34 @@ const devAdmins = [
   },
 ];
 
+function isTemporaryDatabaseError(error: unknown) {
+  const code = typeof error === 'object' && error ? String((error as { code?: string }).code || '') : '';
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+
+  return (
+    ['ECONNRESET', 'PROTOCOL_CONNECTION_LOST', 'ETIMEDOUT', 'EPIPE'].includes(code) ||
+    message.includes('econnreset') ||
+    message.includes('connection is in closed state') ||
+    message.includes('read timeout')
+  );
+}
+
+async function withDatabaseRetry<T>(operation: () => Promise<T>, attempts = 2): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isTemporaryDatabaseError(error) || attempt === attempts) break;
+      await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+    }
+  }
+
+  throw lastError;
+}
+
 export function registerAuthRoutes(app: Express) {
  app.get('/api/debug/database', (_req, res) => {
   res.json(getDatabaseInfo());
@@ -44,7 +72,7 @@ export function registerAuthRoutes(app: Express) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
-    const existingUser = await storage.getUserByUsername(normalizedUsername);
+    const existingUser = await withDatabaseRetry(() => storage.getUserByUsername(normalizedUsername));
     if (existingUser) {
       return res.status(409).json({
         message: `Username already exists in ${databaseInfo.database || 'current database'} on ${databaseInfo.host || 'unknown host'}`,
@@ -54,7 +82,7 @@ export function registerAuthRoutes(app: Express) {
     }
 
     if (normalizedEmail) {
-      const existingEmailUser = await storage.getUserByEmail(normalizedEmail);
+      const existingEmailUser = await withDatabaseRetry(() => storage.getUserByEmail(normalizedEmail));
       if (existingEmailUser) {
         return res.status(409).json({
           message: `Email already exists in ${databaseInfo.database || 'current database'} on ${databaseInfo.host || 'unknown host'}. Try signing in instead.`,
@@ -66,14 +94,25 @@ export function registerAuthRoutes(app: Express) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const user = await storage.createUser({
-      username: normalizedUsername,
-      password: hashedPassword,
-      name: name || null,
-      email: normalizedEmail,
-      nationality: nationality || null,
-      phone: phone || null,
-    });
+    let user;
+    try {
+      user = await withDatabaseRetry(() =>
+        storage.createUser({
+          username: normalizedUsername,
+          password: hashedPassword,
+          name: name || null,
+          email: normalizedEmail,
+          nationality: nationality || null,
+          phone: phone || null,
+        }),
+      );
+    } catch (createError) {
+      if (!isTemporaryDatabaseError(createError)) throw createError;
+
+      const createdUser = await withDatabaseRetry(() => storage.getUserByUsername(normalizedUsername));
+      if (!createdUser) throw createError;
+      user = createdUser;
+    }
 
     sendWelcomeEmail({
       email: user.email,
@@ -99,6 +138,8 @@ export function registerAuthRoutes(app: Express) {
       ? `Username or email already exists in ${databaseInfo.database || 'current database'} on ${databaseInfo.host || 'unknown host'}`
       : errorMessage.includes('Database not connected')
         ? 'Database is not connected. Check DATABASE_URL and restart the backend.'
+        : isTemporaryDatabaseError(error)
+          ? 'Temporary database connection issue. Please wait a few seconds and try again.'
         : errorMessage || 'Signup failed';
     res.status(500).json({ message, database: databaseInfo });
   }
