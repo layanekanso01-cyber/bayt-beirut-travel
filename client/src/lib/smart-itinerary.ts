@@ -146,6 +146,90 @@ export const itineraryLocations: ItineraryLocation[] = [
     bestPeriods: ["morning", "afternoon"],
     visitDuration: "Half day to full day",
   },
+  {
+    id: "qadisha",
+    name: "Qadisha Valley",
+    region: "North Lebanon",
+    description: "A dramatic valley with monasteries, hiking paths, and mountain views.",
+    latitude: 34.2439,
+    longitude: 35.9764,
+    interests: ["nature", "culture"],
+    estimatedCost: 18,
+    bestPeriods: ["morning", "afternoon"],
+    visitDuration: "Half day",
+  },
+  {
+    id: "harissa",
+    name: "Harissa",
+    region: "Keserwan",
+    description: "Panoramic bay views, the Our Lady of Lebanon shrine, and cable car access.",
+    latitude: 33.9814,
+    longitude: 35.6507,
+    interests: ["culture", "nature"],
+    estimatedCost: 22,
+    bestPeriods: ["morning", "afternoon", "evening"],
+    visitDuration: "2-3 hours",
+  },
+  {
+    id: "beiteddine",
+    name: "Beiteddine Palace",
+    region: "Chouf",
+    description: "Elegant Ottoman-era palace architecture surrounded by Chouf mountain scenery.",
+    latitude: 33.6954,
+    longitude: 35.5791,
+    interests: ["culture", "nature"],
+    estimatedCost: 24,
+    bestPeriods: ["morning", "afternoon"],
+    visitDuration: "2-3 hours",
+  },
+  {
+    id: "sidon",
+    name: "Sidon Sea Castle",
+    region: "South Lebanon",
+    description: "A coastal Crusader castle beside old souks, soap museums, and seafood spots.",
+    latitude: 33.5638,
+    longitude: 35.3689,
+    interests: ["culture", "food", "beaches"],
+    estimatedCost: 26,
+    bestPeriods: ["morning", "afternoon"],
+    visitDuration: "Half day",
+  },
+  {
+    id: "anfeh",
+    name: "Anfeh",
+    region: "North Coast",
+    description: "White-and-blue seaside coves, salt ponds, seafood, and relaxed beach views.",
+    latitude: 34.3566,
+    longitude: 35.7337,
+    interests: ["beaches", "food", "nature"],
+    estimatedCost: 32,
+    bestPeriods: ["afternoon", "evening"],
+    visitDuration: "3-4 hours",
+  },
+  {
+    id: "faraya",
+    name: "Faraya",
+    region: "Mount Lebanon",
+    description: "Mountain resort atmosphere with winter snow, summer terraces, and scenic drives.",
+    latitude: 34.0167,
+    longitude: 35.8333,
+    interests: ["nature", "nightlife", "food"],
+    estimatedCost: 55,
+    bestPeriods: ["afternoon", "evening"],
+    visitDuration: "Half day",
+  },
+  {
+    id: "mar-mikhael",
+    name: "Mar Mikhael",
+    region: "Beirut",
+    description: "Creative neighborhood with restaurants, galleries, pubs, and nightlife.",
+    latitude: 33.8966,
+    longitude: 35.5260,
+    interests: ["nightlife", "food", "culture"],
+    estimatedCost: 45,
+    bestPeriods: ["evening"],
+    visitDuration: "2-4 hours",
+  },
 ];
 
 const periods: DayPeriod[] = ["morning", "afternoon", "evening"];
@@ -154,6 +238,22 @@ function budgetLimit(level: BudgetLevel) {
   if (level === "budget") return 55;
   if (level === "mid-range") return 95;
   return 150;
+}
+
+function budgetCostMultiplier(level: BudgetLevel) {
+  if (level === "budget") return 0.75;
+  if (level === "mid-range") return 1;
+  return 1.45;
+}
+
+function budgetLabel(level: BudgetLevel) {
+  if (level === "budget") return "budget-friendly";
+  if (level === "mid-range") return "balanced";
+  return "premium";
+}
+
+function estimateCostForBudget(baseCost: number, level: BudgetLevel) {
+  return Math.max(0, Math.round(baseCost * budgetCostMultiplier(level)));
 }
 
 function estimateTravelMinutes(from?: ItineraryLocation, to?: ItineraryLocation) {
@@ -182,24 +282,33 @@ function scoreLocation(
     0
   );
   const periodScore = location.bestPeriods.includes(period) ? 5 : 0;
-  const budgetScore = location.estimatedCost <= budgetLimit(budget) / 3 ? 4 : budget === "premium" ? 2 : -2;
+  const budgetScore =
+    budget === "premium"
+      ? location.estimatedCost >= 30
+        ? 5
+        : 1
+      : location.estimatedCost <= budgetLimit(budget) / 3
+        ? 5
+        : -4;
   return interestScore + periodScore + budgetScore;
 }
 
 function pickLocation(
-  usedIds: Set<string>,
+  visitCounts: Map<string, number>,
+  dayUsedIds: Set<string>,
   interests: ItineraryInterest[],
   budget: BudgetLevel,
   period: DayPeriod,
   previous?: ItineraryLocation
 ) {
-  const candidates = itineraryLocations.filter((location) => !usedIds.has(location.id));
+  const candidates = itineraryLocations.filter((location) => !dayUsedIds.has(location.id));
   const [best] = candidates
     .map((location) => {
       const travelPenalty = previous ? estimateTravelMinutes(previous, location) / 25 : 0;
+      const repeatPenalty = (visitCounts.get(location.id) || 0) * 7;
       return {
         location,
-        score: scoreLocation(location, interests, period, budget) - travelPenalty,
+        score: scoreLocation(location, interests, period, budget) - travelPenalty - repeatPenalty,
       };
     })
     .sort((a, b) => b.score - a.score);
@@ -223,24 +332,26 @@ export function generateSmartItinerary(params: {
 }): ItineraryPlan {
   const safeDays = Math.min(Math.max(params.days, 1), 7);
   const interests: ItineraryInterest[] = params.interests.length > 0 ? params.interests : ["culture"];
-  const usedIds = new Set<string>();
+  const visitCounts = new Map<string, number>();
   const days: ItineraryDay[] = [];
 
   for (let dayNumber = 1; dayNumber <= safeDays; dayNumber += 1) {
     const stops: ItineraryStop[] = [];
+    const dayUsedIds = new Set<string>();
     let previous: ItineraryLocation | undefined;
 
     periods.forEach((period) => {
-      const location = pickLocation(usedIds, interests, params.budget, period, previous);
+      const location = pickLocation(visitCounts, dayUsedIds, interests, params.budget, period, previous);
       if (!location) return;
 
       const travelMinutes = estimateTravelMinutes(previous, location);
-      usedIds.add(location.id);
+      dayUsedIds.add(location.id);
+      visitCounts.set(location.id, (visitCounts.get(location.id) || 0) + 1);
       stops.push({
         period,
         location,
         travelFromPrevious: formatTravelTime(travelMinutes),
-        estimatedCost: location.estimatedCost,
+        estimatedCost: estimateCostForBudget(location.estimatedCost, params.budget),
       });
       previous = location;
     });
@@ -258,6 +369,6 @@ export function generateSmartItinerary(params: {
   return {
     days,
     totalCost,
-    summary: `${safeDays}-day ${params.budget} itinerary focused on ${interests.join(", ")}.`,
+    summary: `${safeDays}-day ${budgetLabel(params.budget)} itinerary focused on ${interests.join(", ")}.`,
   };
 }
